@@ -36,6 +36,8 @@ const (
 	TemplateJenkins      Template = "jenkins"
 	TemplateRoute        Template = "route"
 	TemplatePay          Template = "pay"
+	// TemplateForm 表单格式模板；发送时需传 PushID（表单编码）。
+	TemplateForm Template = "form"
 )
 
 // SendStatus 消息发送状态（整数编码）。

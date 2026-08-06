@@ -57,6 +57,17 @@ _, err := client.Send(ctx, &pushplus.SendRequest{
 })
 ```
 
+发送 push 表单消息时使用 `TemplateForm`，并传入表单编码 `PushID`：
+
+```go
+_, err := client.Send(ctx, &pushplus.SendRequest{
+    Title:    "表单通知",
+    Content:  "您有新的表单待填写",
+    Template: pushplus.TemplateForm,
+    PushID:   "表单编码",
+})
+```
+
 ### 4. 多渠道发送（`/batchSend`）
 
 ```go

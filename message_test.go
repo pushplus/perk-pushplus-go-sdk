@@ -129,3 +129,63 @@ func TestSendHTTPFailure(t *testing.T) {
 		t.Fatalf("期望 code=500（HTTP 状态码），实际 %d", e.Code)
 	}
 }
+
+func TestSendFormTemplateSerializesPushID(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("/send", 200, `{"code":200,"msg":"ok","data":"SC-FORM"}`)
+	client := newTestClient(mock)
+
+	shortCode, err := client.Send(context.Background(), &SendRequest{
+		Title:    "表单通知",
+		Content:  "您有新的表单待填写",
+		Template: TemplateForm,
+		PushID:   "ES6kgrgG",
+	})
+	if err != nil {
+		t.Fatalf("Send 失败: %v", err)
+	}
+	if shortCode != "SC-FORM" {
+		t.Fatalf("shortCode 期望 SC-FORM，实际 %s", shortCode)
+	}
+
+	reqs := mock.requestsTo("/send")
+	var body map[string]any
+	if err := json.Unmarshal([]byte(reqs[0].Body), &body); err != nil {
+		t.Fatalf("请求体不是合法 JSON: %v", err)
+	}
+	if body["template"] != "form" {
+		t.Fatalf("template 期望 form，实际 %v", body["template"])
+	}
+	if body["pushId"] != "ES6kgrgG" {
+		t.Fatalf("pushId 期望 ES6kgrgG，实际 %v", body["pushId"])
+	}
+}
+
+func TestBatchSendFormTemplateSerializesPushID(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("/batchSend", 200,
+		`{"code":200,"msg":"ok","data":[{"shortCode":"A","code":200,"channel":"wechat"}]}`)
+	client := newTestClient(mock)
+
+	req := (&BatchSendRequest{
+		Content:  "表单摘要",
+		Template: TemplateForm,
+		PushID:   "ES6kgrgG",
+	}).AddChannel(ChannelWechat, "")
+
+	if _, err := client.BatchSend(context.Background(), req); err != nil {
+		t.Fatalf("BatchSend 失败: %v", err)
+	}
+
+	reqs := mock.requestsTo("/batchSend")
+	var body map[string]any
+	if err := json.Unmarshal([]byte(reqs[0].Body), &body); err != nil {
+		t.Fatalf("请求体不是合法 JSON: %v", err)
+	}
+	if body["template"] != "form" {
+		t.Fatalf("template 期望 form，实际 %v", body["template"])
+	}
+	if body["pushId"] != "ES6kgrgG" {
+		t.Fatalf("pushId 期望 ES6kgrgG，实际 %v", body["pushId"])
+	}
+}

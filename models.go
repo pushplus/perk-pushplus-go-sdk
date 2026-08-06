@@ -50,6 +50,8 @@ type SendRequest struct {
 	To string `json:"to,omitempty"`
 	// Pre 预处理编码。
 	Pre string `json:"pre,omitempty"`
+	// PushID push 表单编码；Template 为 form 时必传。
+	PushID string `json:"pushId,omitempty"`
 }
 
 // BatchSendRequest 多渠道发送消息请求，对应 /batchSend 接口。
@@ -68,6 +70,8 @@ type BatchSendRequest struct {
 	Timestamp   int64  `json:"timestamp,omitempty"`
 	To          string `json:"to,omitempty"`
 	Pre         string `json:"pre,omitempty"`
+	// PushID push 表单编码；Template 为 form 时必传。
+	PushID string `json:"pushId,omitempty"`
 }
 
 // AddChannel 追加一个渠道及其 option，内部自动以逗号拼接（与官方文档示例语义一致）。
