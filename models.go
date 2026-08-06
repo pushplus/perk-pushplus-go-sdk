@@ -50,7 +50,7 @@ type SendRequest struct {
 	To string `json:"to,omitempty"`
 	// Pre 预处理编码。
 	Pre string `json:"pre,omitempty"`
-	// PushID push 表单编码；Template 为 form 时必传。
+	// PushID push 编码；Template 为 form/doc/excel 时必传。
 	PushID string `json:"pushId,omitempty"`
 }
 
@@ -70,7 +70,7 @@ type BatchSendRequest struct {
 	Timestamp   int64  `json:"timestamp,omitempty"`
 	To          string `json:"to,omitempty"`
 	Pre         string `json:"pre,omitempty"`
-	// PushID push 表单编码；Template 为 form 时必传。
+	// PushID push 编码；Template 为 form/doc/excel 时必传。
 	PushID string `json:"pushId,omitempty"`
 }
 
@@ -129,6 +129,14 @@ func (r *SendMessageResult) StatusEnum() SendStatus {
 
 /* ============================== 开放接口 - 用户 ============================== */
 
+// VipInfo 会员信息。
+type VipInfo struct {
+	// IsVip 是否会员；0-否，1-是。
+	IsVip int `json:"isVip"`
+	// LastDay 会员到期日。
+	LastDay string `json:"lastDay"`
+}
+
 // UserInfo 当前用户信息。
 type UserInfo struct {
 	OpenID      string `json:"openId"`
@@ -142,6 +150,10 @@ type UserInfo struct {
 	EmailStatus int    `json:"emailStatus"`
 	Birthday    string `json:"birthday"`
 	Points      int    `json:"points"`
+	// VipInfo 会员信息。
+	VipInfo *VipInfo `json:"vipInfo,omitempty"`
+	// VerifyStatus 实名认证状态；0-未实名，1-已实名。
+	VerifyStatus int `json:"verifyStatus"`
 }
 
 // UserLimitTime 用户限制发送时间。

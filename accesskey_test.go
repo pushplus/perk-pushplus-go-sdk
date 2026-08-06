@@ -9,12 +9,16 @@ import (
 func TestAccessKeyCachedAcrossCalls(t *testing.T) {
 	mock := newMockHTTPRequester()
 	mock.enqueue("getAccessKey", 200, accessKeyResponse)
-	mock.enqueue("/api/open/user/myInfo", 200, `{"code":200,"msg":"ok","data":{"nickName":"perk"}}`)
+	mock.enqueue("/api/open/user/myInfo", 200, `{"code":200,"msg":"ok","data":{"nickName":"perk","vipInfo":{"isVip":1,"lastDay":"2026-12-31"},"verifyStatus":1}}`)
 	mock.enqueue("/api/open/user/token", 200, `{"code":200,"msg":"ok","data":"tok"}`)
 	client := newTestClient(mock)
 
-	if _, err := client.User().MyInfo(context.Background()); err != nil {
+	info, err := client.User().MyInfo(context.Background())
+	if err != nil {
 		t.Fatalf("MyInfo 失败: %v", err)
+	}
+	if info.NickName != "perk" || info.VipInfo == nil || info.VipInfo.IsVip != 1 || info.VipInfo.LastDay != "2026-12-31" || info.VerifyStatus != 1 {
+		t.Fatalf("MyInfo 新字段解析错误: %+v", info)
 	}
 	if _, err := client.User().GetToken(context.Background()); err != nil {
 		t.Fatalf("GetToken 失败: %v", err)

@@ -38,6 +38,10 @@ const (
 	TemplatePay          Template = "pay"
 	// TemplateForm 表单格式模板；发送时需传 PushID（表单编码）。
 	TemplateForm Template = "form"
+	// TemplateDoc 文档格式模板（push 文档）；发送时需传 PushID。
+	TemplateDoc Template = "doc"
+	// TemplateExcel 表格格式模板（push 表格）；发送时需传 PushID。
+	TemplateExcel Template = "excel"
 )
 
 // SendStatus 消息发送状态（整数编码）。
