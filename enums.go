@@ -155,3 +155,35 @@ func ErrorCodeOf(code int) ErrorCode {
 	}
 	return ErrorCodeUnknown
 }
+
+// FormStatus push 表单状态。
+type FormStatus int
+
+const (
+	// FormStatusDraft 草稿。
+	FormStatusDraft FormStatus = 0
+	// FormStatusCollecting 收集中。
+	FormStatusCollecting FormStatus = 1
+	// FormStatusStopped 已停止。
+	FormStatusStopped FormStatus = 2
+)
+
+// SharePerm push 文档 / 表格分享权限。
+type SharePerm int
+
+const (
+	// SharePermClosed 关闭分享。
+	SharePermClosed SharePerm = 0
+	// SharePermView 开启分享（仅可查看）。
+	SharePermView SharePerm = 1
+)
+
+// ShareLogin push 文档 / 表格打开分享页是否需要登录。
+type ShareLogin int
+
+const (
+	// ShareLoginAnonymous 免登录。
+	ShareLoginAnonymous ShareLogin = 0
+	// ShareLoginRequired 需登录。
+	ShareLoginRequired ShareLogin = 1
+)

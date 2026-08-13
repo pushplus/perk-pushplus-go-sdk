@@ -131,3 +131,81 @@ func TestSettingReceiveLimitParamName(t *testing.T) {
 		t.Fatalf("query 参数名应保持官方拼写 recevieLimit: %+v", reqs)
 	}
 }
+
+func TestFormCreateSavePublish(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/push/api/open/form/create", 200,
+		`{"code":200,"msg":"ok","data":{"id":10001,"title":"用户满意度调查","status":0}}`)
+	mock.enqueue("/push/api/open/form/save", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/push/api/open/form/publish", 200,
+		`{"code":200,"msg":"ok","data":{"id":10001,"formCode":"a1b2c3d4","status":1}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	created, err := client.Form().Create(ctx, "用户满意度调查")
+	if err != nil {
+		t.Fatalf("Create 失败: %v", err)
+	}
+	if created.ID != 10001 {
+		t.Fatalf("期望 id=10001，实际 %d", created.ID)
+	}
+	err = client.Form().Save(ctx, &FormSaveRequest{
+		ID:    10001,
+		Title: "用户满意度调查",
+		Items: []map[string]any{{"id": "q1", "type": "input", "label": "姓名"}},
+	})
+	if err != nil {
+		t.Fatalf("Save 失败: %v", err)
+	}
+	published, err := client.Form().Publish(ctx, 10001)
+	if err != nil {
+		t.Fatalf("Publish 失败: %v", err)
+	}
+	if published.FormCode != "a1b2c3d4" {
+		t.Fatalf("formCode 错误: %s", published.FormCode)
+	}
+	reqs := mock.requestsTo("/push/api/open/form/publish")
+	if len(reqs) != 1 || !strings.Contains(reqs[0].URL, "id=10001") {
+		t.Fatalf("publish 应带 query id: %+v", reqs)
+	}
+}
+
+func TestExcelWriteCellsAndSaveObject(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/push/api/open/excel/writeCells", 200,
+		`{"code":200,"msg":"ok","data":{"docCode":"Sh3xY7kP","publishDirty":true}}`)
+	mock.enqueue("/push/api/open/excel/saveContent", 200,
+		`{"code":200,"msg":"ok","data":{"docCode":"Sh3xY7kP","publishDirty":true}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	_, err := client.Excel().WriteCells(ctx, "Sh3xY7kP", "A2", [][]any{{"2026-08-13", 12800}}, "Sheet1")
+	if err != nil {
+		t.Fatalf("WriteCells 失败: %v", err)
+	}
+	_, err = client.Excel().SaveContent(ctx, "Sh3xY7kP", map[string]any{"sheetOrder": []string{"sheet-1"}})
+	if err != nil {
+		t.Fatalf("SaveContent 失败: %v", err)
+	}
+
+	writeReqs := mock.requestsTo("/push/api/open/excel/writeCells")
+	var writeBody map[string]any
+	if err := json.Unmarshal([]byte(writeReqs[0].Body), &writeBody); err != nil {
+		t.Fatalf("write body 不是 JSON: %v", err)
+	}
+	if writeBody["range"] != "A2" || writeBody["sheetName"] != "Sheet1" {
+		t.Fatalf("writeCells 参数错误: %s", writeReqs[0].Body)
+	}
+
+	saveReqs := mock.requestsTo("/push/api/open/excel/saveContent")
+	var saveBody map[string]any
+	if err := json.Unmarshal([]byte(saveReqs[0].Body), &saveBody); err != nil {
+		t.Fatalf("save body 不是 JSON: %v", err)
+	}
+	content, ok := saveBody["content"].(string)
+	if !ok || !strings.Contains(content, "sheet-1") {
+		t.Fatalf("content 应为 JSON 字符串: %s", saveReqs[0].Body)
+	}
+}

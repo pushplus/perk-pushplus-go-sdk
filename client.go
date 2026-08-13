@@ -4,7 +4,8 @@
 //   - 本地限流守卫：发送接口命中 code=900 时自动短路同 token 的后续调用
 //   - 单条 /send、多渠道 /batchSend、消息回调类型化解析
 //   - 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、
-//     公众号/企业微信/邮箱渠道、ClawBot、功能设置、预处理、图片服务
+//     公众号/企业微信/邮箱渠道、ClawBot、功能设置、预处理、图片服务、
+//     push 表单、push 文档、push 表格
 package pushplus
 
 import (
@@ -33,6 +34,9 @@ type Client struct {
 	setting      *SettingAPI
 	pre          *PreAPI
 	image        *ImageAPI
+	form         *FormAPI
+	doc          *DocAPI
+	excel        *ExcelAPI
 }
 
 // NewClient 创建 PushPlus 客户端。
@@ -81,6 +85,9 @@ func NewClient(opts ...Option) *Client {
 		setting:          newSettingAPI(c, akm),
 		pre:              newPreAPI(c, akm),
 		image:            newImageAPI(c, akm),
+		form:             newFormAPI(c, akm),
+		doc:              newDocAPI(c, akm),
+		excel:            newExcelAPI(c, akm),
 	}
 }
 
@@ -141,6 +148,15 @@ func (c *Client) Pre() *PreAPI { return c.pre }
 
 // Image 开放接口 - 图片服务。
 func (c *Client) Image() *ImageAPI { return c.image }
+
+// Form 开放接口 - push 表单。
+func (c *Client) Form() *FormAPI { return c.form }
+
+// Doc 开放接口 - push 文档。
+func (c *Client) Doc() *DocAPI { return c.doc }
+
+// Excel 开放接口 - push 表格。
+func (c *Client) Excel() *ExcelAPI { return c.excel }
 
 /* ============================== 便捷转发方法 ============================== */
 

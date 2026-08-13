@@ -598,3 +598,189 @@ type FriendInfo struct {
 	CreateTime  string `json:"createTime"`
 	EmailStatus int    `json:"emailStatus"`
 }
+
+/* ============================== 开放接口 - form / doc / excel ============================== */
+
+// FormListQuery 我的表单分页查询。
+type FormListQuery struct {
+	PageNum  int    `json:"pageNum,omitempty"`
+	PageSize int    `json:"pageSize,omitempty"`
+	Keyword  string `json:"keyword,omitempty"`
+	// Status 表单状态：0草稿 / 1收集中 / 2已停止；用指针区分未传。
+	Status *int `json:"status,omitempty"`
+}
+
+// NewFormListQuery 创建表单分页查询。
+func NewFormListQuery(pageNum, pageSize int) *FormListQuery {
+	return &FormListQuery{PageNum: pageNum, PageSize: pageSize}
+}
+
+// FormCover 表单封面页配置。
+type FormCover struct {
+	Enabled    *bool  `json:"enabled,omitempty"`
+	Image      string `json:"image,omitempty"`
+	ButtonText string `json:"buttonText,omitempty"`
+}
+
+// FormTheme 表单主题外观。
+type FormTheme struct {
+	PrimaryColor    string     `json:"primaryColor,omitempty"`
+	BackgroundColor string     `json:"backgroundColor,omitempty"`
+	HeaderImage     string     `json:"headerImage,omitempty"`
+	BackgroundImage string     `json:"backgroundImage,omitempty"`
+	Cover           *FormCover `json:"cover,omitempty"`
+}
+
+// FormSettings 表单收集 / 展示设置。
+type FormSettings struct {
+	EndTime            *string `json:"endTime,omitempty"`
+	MaxResponses       *int    `json:"maxResponses,omitempty"`
+	OncePerUser        *bool   `json:"oncePerUser,omitempty"`
+	AllowAnonymous     *bool   `json:"allowAnonymous,omitempty"`
+	Password           string  `json:"password,omitempty"`
+	ShowQuestionNumber *bool   `json:"showQuestionNumber,omitempty"`
+	OnePerPage         *bool   `json:"onePerPage,omitempty"`
+	ShowPrevButton     *bool   `json:"showPrevButton,omitempty"`
+	HideTitle          *bool   `json:"hideTitle,omitempty"`
+	HideCopyright      *bool   `json:"hideCopyright,omitempty"`
+	HideAd             *bool   `json:"hideAd,omitempty"`
+	ShowOutline        *bool   `json:"showOutline,omitempty"`
+	ThankText          string  `json:"thankText,omitempty"`
+	RedirectEnabled    *bool   `json:"redirectEnabled,omitempty"`
+	RedirectURL        string  `json:"redirectUrl,omitempty"`
+	AllowEdit          *bool   `json:"allowEdit,omitempty"`
+}
+
+// FormListItem 表单列表项 / 创建、复制结果。
+type FormListItem struct {
+	ID            int64  `json:"id"`
+	FormCode      string `json:"formCode,omitempty"`
+	FillURL       string `json:"fillUrl,omitempty"`
+	Title         string `json:"title,omitempty"`
+	Description   string `json:"description,omitempty"`
+	Status        int    `json:"status"`
+	ResponseCount int    `json:"responseCount"`
+	PublishTime   string `json:"publishTime,omitempty"`
+	CreateTime    string `json:"createTime,omitempty"`
+	UpdateTime    string `json:"updateTime,omitempty"`
+}
+
+// FormSaveRequest 保存表单设计。Items 为题目列表，每题至少含 id、type、label。
+type FormSaveRequest struct {
+	ID          int64            `json:"id"`
+	Title       string           `json:"title"`
+	Description string           `json:"description,omitempty"`
+	Items       []map[string]any `json:"items,omitempty"`
+	Theme       *FormTheme       `json:"theme,omitempty"`
+	Settings    *FormSettings    `json:"settings,omitempty"`
+}
+
+// FormDetail 表单详情。
+type FormDetail struct {
+	ID            int64            `json:"id"`
+	FormCode      string           `json:"formCode,omitempty"`
+	FillURL       string           `json:"fillUrl,omitempty"`
+	Title         string           `json:"title,omitempty"`
+	Description   string           `json:"description,omitempty"`
+	Items         []map[string]any `json:"items,omitempty"`
+	Theme         *FormTheme       `json:"theme,omitempty"`
+	Settings      *FormSettings    `json:"settings,omitempty"`
+	Status        int              `json:"status"`
+	PublishDirty  bool             `json:"publishDirty"`
+	ResponseCount int              `json:"responseCount"`
+	PublishTime   string           `json:"publishTime,omitempty"`
+	CreateTime    string           `json:"createTime,omitempty"`
+	UpdateTime    string           `json:"updateTime,omitempty"`
+}
+
+// FormPublishDiff 草稿题目与发布快照差异。
+type FormPublishDiff struct {
+	Dirty         bool     `json:"dirty"`
+	Breaking      bool     `json:"breaking"`
+	ResponseCount int      `json:"responseCount"`
+	Added         []string `json:"added"`
+	Removed       []string `json:"removed"`
+	TypeChanged   []string `json:"typeChanged"`
+	OptionChanged []string `json:"optionChanged"`
+}
+
+// FormPublishResult 发布表单结果。
+type FormPublishResult struct {
+	ID             int64  `json:"id"`
+	FormCode       string `json:"formCode,omitempty"`
+	FillURL        string `json:"fillUrl,omitempty"`
+	Title          string `json:"title,omitempty"`
+	Status         int    `json:"status"`
+	PreviousStatus int    `json:"previousStatus"`
+	PublishDirty   bool   `json:"publishDirty"`
+	PublishTime    string `json:"publishTime,omitempty"`
+}
+
+// DocListQuery 文档 / 表格分页查询。
+type DocListQuery struct {
+	PageNum      int    `json:"pageNum,omitempty"`
+	PageSize     int    `json:"pageSize,omitempty"`
+	Keyword      string `json:"keyword,omitempty"`
+	ShareEnabled *bool  `json:"shareEnabled,omitempty"`
+}
+
+// NewDocListQuery 创建文档 / 表格分页查询。
+func NewDocListQuery(pageNum, pageSize int) *DocListQuery {
+	return &DocListQuery{PageNum: pageNum, PageSize: pageSize}
+}
+
+// DocListItem 文档 / 表格列表项。
+type DocListItem struct {
+	DocCode     string `json:"docCode,omitempty"`
+	ShareURL    string `json:"shareUrl,omitempty"`
+	Title       string `json:"title,omitempty"`
+	SharePerm   int    `json:"sharePerm"`
+	ShareLogin  int    `json:"shareLogin"`
+	Perm        int    `json:"perm"`
+	Published   bool   `json:"published"`
+	PublishTime string `json:"publishTime,omitempty"`
+	CreateTime  string `json:"createTime,omitempty"`
+	UpdateTime  string `json:"updateTime,omitempty"`
+}
+
+// DocVo 文档信息（不含正文）。
+type DocVo struct {
+	DocCode      string `json:"docCode,omitempty"`
+	ShareURL     string `json:"shareUrl,omitempty"`
+	Title        string `json:"title,omitempty"`
+	SharePerm    int    `json:"sharePerm"`
+	ShareLogin   int    `json:"shareLogin"`
+	Perm         int    `json:"perm"`
+	Published    bool   `json:"published"`
+	PublishDirty bool   `json:"publishDirty"`
+	PublishTime  string `json:"publishTime,omitempty"`
+	CreateTime   string `json:"createTime,omitempty"`
+	UpdateTime   string `json:"updateTime,omitempty"`
+}
+
+// DocContent 文档内容（HTML 草稿）。
+type DocContent struct {
+	DocVo
+	Content string `json:"content,omitempty"`
+}
+
+// ExcelVo 表格信息（不含正文）。
+type ExcelVo struct {
+	DocCode      string `json:"docCode,omitempty"`
+	ShareURL     string `json:"shareUrl,omitempty"`
+	Title        string `json:"title,omitempty"`
+	SharePerm    int    `json:"sharePerm"`
+	ShareLogin   int    `json:"shareLogin"`
+	Perm         int    `json:"perm"`
+	Published    bool   `json:"published"`
+	PublishDirty bool   `json:"publishDirty"`
+	PublishTime  string `json:"publishTime,omitempty"`
+	CreateTime   string `json:"createTime,omitempty"`
+	UpdateTime   string `json:"updateTime,omitempty"`
+}
+
+// ExcelContent 表格内容（整表 JSON 字符串草稿）。
+type ExcelContent struct {
+	ExcelVo
+	Content string `json:"content,omitempty"`
+}
