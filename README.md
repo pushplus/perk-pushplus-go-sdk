@@ -57,7 +57,7 @@ _, err := client.Send(ctx, &pushplus.SendRequest{
 })
 ```
 
-发送 push 表单消息时使用 `TemplateForm`，并传入表单编码 `PushID`：
+发送 push 表单 / 文档 / 表格时使用对应 `Template`，并传入编码 `PushID`：
 
 ```go
 _, err := client.Send(ctx, &pushplus.SendRequest{
@@ -65,6 +65,18 @@ _, err := client.Send(ctx, &pushplus.SendRequest{
     Content:  "您有新的表单待填写",
     Template: pushplus.TemplateForm,
     PushID:   "表单编码",
+})
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    "本周工作同步",
+    Content:  "请查收",
+    Template: pushplus.TemplateDoc,
+    PushID:   "文档编码",
+})
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    "销售日报",
+    Content:  "请查收",
+    Template: pushplus.TemplateExcel,
+    PushID:   "表格编码",
 })
 ```
 
@@ -113,6 +125,12 @@ result, err := client.OpenMessage().QueryResult(ctx, shortCode)
 // 群组
 topics, err := client.Topic().List(ctx, pushplus.NewTopicListQuery(1, 20, 0))
 qr, err := client.Topic().QrCode(ctx, 1, nil, nil)
+err = client.TopicUser().AddBlacklist(ctx, 10)
+topicBlacklist, err := client.TopicUser().BlacklistList(ctx, pushplus.NewTopicUserListQuery(1, 20, 1))
+
+// 好友黑名单
+err = client.Friend().AddBlacklist(ctx, 1322)
+friendBlacklist, err := client.Friend().BlacklistList(ctx, pushplus.NewPageQuery(1, 20))
 
 // Webhook 渠道配置
 id, err := client.Webhook().Add(ctx, &pushplus.WebhookSaveRequest{
@@ -139,21 +157,38 @@ err = client.Form().Save(ctx, &pushplus.FormSaveRequest{
     Items: []map[string]any{{"id": "q_name", "type": "input", "label": "您的姓名", "required": true}},
 })
 published, err := client.Form().Publish(ctx, form.ID)
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    published.Title,
+    Content:  "请花1分钟完成填写",
+    Template: pushplus.TemplateForm,
+    PushID:   published.FormCode,
+})
 
 // push 文档
-doc, err := client.Doc().Create(ctx, "本周工作同步")
-_, err = client.Doc().SaveContent(ctx, doc.DocCode, "<h1>本周工作同步</h1><p>需求评审。</p>")
+doc, err := client.Doc().ImportWordFile(ctx, "本周工作同步.docx")
 anon := 0
 _, err = client.Doc().UpdateShare(ctx, doc.DocCode, 1, &anon)
 _, err = client.Doc().Publish(ctx, doc.DocCode)
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    doc.Title,
+    Content:  "请查收",
+    Template: pushplus.TemplateDoc,
+    PushID:   doc.DocCode,
+})
 
 // push 表格
-sheet, err := client.Excel().Create(ctx, "销售日报")
+sheet, err := client.Excel().ImportExcelFile(ctx, "销售日报.xlsx")
 _, err = client.Excel().WriteCells(ctx, sheet.DocCode, "A1", [][]any{
     {"日期", "销售额"},
     {"2026-08-13", 12800},
 }, "Sheet1")
 _, err = client.Excel().Publish(ctx, sheet.DocCode)
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    sheet.Title,
+    Content:  "请查收",
+    Template: pushplus.TemplateExcel,
+    PushID:   sheet.DocCode,
+})
 ```
 
 各 API 一览：

@@ -329,6 +329,16 @@ type TopicUserItem struct {
 	Remark      string `json:"remark"`
 }
 
+// TopicUserBlacklistItem 群组订阅人黑名单列表项。
+type TopicUserBlacklistItem struct {
+	ID         int64  `json:"id"`
+	UserID     int64  `json:"userId"`
+	NickName   string `json:"nickName"`
+	OpenID     string `json:"openId"`
+	HeadImgURL string `json:"headImgUrl"`
+	CreateTime string `json:"createTime"`
+}
+
 /* ============================== 开放接口 - Webhook ============================== */
 
 // WebhookItem webhook 渠道配置。
@@ -475,6 +485,15 @@ type FriendQrCode struct {
 	QrCodeImgURL string `json:"qrCodeImgUrl"`
 }
 
+// FriendBlacklistItem 好友黑名单列表项。
+type FriendBlacklistItem struct {
+	ID         int64  `json:"id"`
+	FriendID   int64  `json:"friendId"`
+	NickName   string `json:"nickName"`
+	HeadImgURL string `json:"headImgUrl"`
+	CreateTime string `json:"createTime"`
+}
+
 /* ============================== 开放接口 - 预处理 ============================== */
 
 // PreItem 预处理列表项。
@@ -601,18 +620,32 @@ type FriendInfo struct {
 
 /* ============================== 开放接口 - form / doc / excel ============================== */
 
-// FormListQuery 我的表单分页查询。
+// FormListQuery 我的表单分页查询。官方结构是 {current, pageSize, params:{keyword, status}}。
 type FormListQuery struct {
-	PageNum  int    `json:"pageNum,omitempty"`
-	PageSize int    `json:"pageSize,omitempty"`
-	Keyword  string `json:"keyword,omitempty"`
-	// Status 表单状态：0草稿 / 1收集中 / 2已停止；用指针区分未传。
-	Status *int `json:"status,omitempty"`
+	Current  int            `json:"current,omitempty"`
+	PageSize int            `json:"pageSize,omitempty"`
+	Params   map[string]any `json:"params,omitempty"`
 }
 
 // NewFormListQuery 创建表单分页查询。
-func NewFormListQuery(pageNum, pageSize int) *FormListQuery {
-	return &FormListQuery{PageNum: pageNum, PageSize: pageSize}
+func NewFormListQuery(current, pageSize int) *FormListQuery {
+	return &FormListQuery{Current: current, PageSize: pageSize}
+}
+
+// NewFormListQueryFilter 创建带关键词 / 状态筛选的表单分页查询。
+func NewFormListQueryFilter(current, pageSize int, keyword string, status *int) *FormListQuery {
+	params := map[string]any{}
+	if keyword != "" {
+		params["keyword"] = keyword
+	}
+	if status != nil {
+		params["status"] = *status
+	}
+	q := &FormListQuery{Current: current, PageSize: pageSize}
+	if len(params) > 0 {
+		q.Params = params
+	}
+	return q
 }
 
 // FormCover 表单封面页配置。
@@ -716,17 +749,16 @@ type FormPublishResult struct {
 	PublishTime    string `json:"publishTime,omitempty"`
 }
 
-// DocListQuery 文档 / 表格分页查询。
+// DocListQuery 文档 / 表格分页查询。官方结构是 {current, pageSize, params:{keyword, shareEnabled}}。
 type DocListQuery struct {
-	PageNum      int    `json:"pageNum,omitempty"`
-	PageSize     int    `json:"pageSize,omitempty"`
-	Keyword      string `json:"keyword,omitempty"`
-	ShareEnabled *bool  `json:"shareEnabled,omitempty"`
+	Current  int            `json:"current,omitempty"`
+	PageSize int            `json:"pageSize,omitempty"`
+	Params   map[string]any `json:"params,omitempty"`
 }
 
 // NewDocListQuery 创建文档 / 表格分页查询。
-func NewDocListQuery(pageNum, pageSize int) *DocListQuery {
-	return &DocListQuery{PageNum: pageNum, PageSize: pageSize}
+func NewDocListQuery(current, pageSize int) *DocListQuery {
+	return &DocListQuery{Current: current, PageSize: pageSize}
 }
 
 // DocListItem 文档 / 表格列表项。

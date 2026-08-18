@@ -317,3 +317,92 @@ func executeOpen[T any](ctx context.Context, c *core, akm *AccessKeyManager, met
 	return zero, newError(resp.codeOr(-1),
 		fmt.Sprintf("PushPlus 开放接口业务失败: code=%d, msg=%s", resp.codeOr(-1), resp.Msg))
 }
+
+func executeRaw[T any](ctx context.Context, c *core, method, path string, headers map[string]string, body []byte) (*apiResponse[T], error) {
+	reqURL := c.resolveURL(path)
+	resp, err := c.http.ExecuteRaw(ctx, method, reqURL, headers, body)
+	if err != nil {
+		if _, ok := AsError(err); ok {
+			return nil, err
+		}
+		return nil, newErrorWithCause(-1, "PushPlus 接口 HTTP 调用失败: "+err.Error(), err)
+	}
+	if !resp.IsSuccessful() {
+		return nil, newError(resp.StatusCode,
+			fmt.Sprintf("PushPlus 接口 HTTP 调用失败: status=%d, body=%s", resp.StatusCode, resp.Body))
+	}
+	return parseAPIResponse[T](resp.Body)
+}
+
+// executeOpenRaw 执行带二进制 body 的开放接口请求；code=401 时刷新 AccessKey 后重试一次。
+func executeOpenRaw[T any](ctx context.Context, c *core, akm *AccessKeyManager, method, path string, extraHeaders map[string]string, body []byte) (T, error) {
+	var zero T
+	key, err := akm.GetAccessKey(ctx)
+	if err != nil {
+		return zero, err
+	}
+	headers := map[string]string{headerAccessKey: key}
+	for k, v := range extraHeaders {
+		headers[k] = v
+	}
+	resp, err := executeRaw[T](ctx, c, method, path, headers, body)
+	if err != nil {
+		return zero, err
+	}
+	if resp.isSuccess() {
+		return resp.Data, nil
+	}
+	if resp.Code != nil && *resp.Code == codeAccessKeyInvalid {
+		akm.Invalidate()
+		retryKey, err := akm.GetAccessKey(ctx)
+		if err != nil {
+			return zero, err
+		}
+		retryHeaders := map[string]string{headerAccessKey: retryKey}
+		for k, v := range extraHeaders {
+			retryHeaders[k] = v
+		}
+		retry, err := executeRaw[T](ctx, c, method, path, retryHeaders, body)
+		if err != nil {
+			return zero, err
+		}
+		if retry.isSuccess() {
+			return retry.Data, nil
+		}
+		return zero, newError(retry.codeOr(-1),
+			fmt.Sprintf("PushPlus 开放接口业务失败(重试后): code=%d, msg=%s", retry.codeOr(-1), retry.Msg))
+	}
+	return zero, newError(resp.codeOr(-1),
+		fmt.Sprintf("PushPlus 开放接口业务失败: code=%d, msg=%s", resp.codeOr(-1), resp.Msg))
+}
+
+func executeOpenMultipart[T any](ctx context.Context, c *core, akm *AccessKeyManager, path, fileName, contentType string, fileBytes []byte) (T, error) {
+	var zero T
+	if len(fileBytes) == 0 {
+		return zero, newError(-1, "上传文件内容不能为空")
+	}
+	if strings.TrimSpace(fileName) == "" {
+		fileName = "file"
+	}
+	if strings.TrimSpace(contentType) == "" {
+		contentType = "application/octet-stream"
+	}
+	boundary := "----PushPlusBoundary" + randomHex(16)
+	body := buildFileMultipartBody(boundary, fileName, contentType, fileBytes)
+	headers := map[string]string{
+		"Content-Type": "multipart/form-data; boundary=" + boundary,
+	}
+	return executeOpenRaw[T](ctx, c, akm, "POST", path, headers, body)
+}
+
+func buildFileMultipartBody(boundary, fileName, contentType string, fileBytes []byte) []byte {
+	var buf bytes.Buffer
+	buf.Grow(len(fileBytes) + 256)
+	buf.WriteString("--" + boundary + "\r\n")
+	buf.WriteString("Content-Disposition: form-data; name=\"file\"; filename=\"" + escapeFileName(fileName) + "\"\r\n")
+	buf.WriteString("Content-Type: " + contentType + "\r\n\r\n")
+	buf.Write(fileBytes)
+	buf.WriteString("\r\n")
+	buf.WriteString("--" + boundary + "--\r\n")
+	return buf.Bytes()
+}

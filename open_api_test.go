@@ -209,3 +209,124 @@ func TestExcelWriteCellsAndSaveObject(t *testing.T) {
 		t.Fatalf("content 应为 JSON 字符串: %s", saveReqs[0].Body)
 	}
 }
+
+func TestFriendAndTopicUserBlacklist(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/api/open/friend/addBlacklist", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/api/open/friend/blacklistList", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"pageSize":20,"total":1,"pages":1,"list":[{"id":4,"friendId":1322,"nickName":"昵称"}]}}`)
+	mock.enqueue("/api/open/friend/removeBlacklist", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/api/open/topicUser/addBlacklist", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/api/open/topicUser/blacklistList", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"list":[{"id":1,"userId":1322}]}}`)
+	mock.enqueue("/api/open/topicUser/removeBlacklist", 200, `{"code":200,"msg":"ok"}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	if err := client.Friend().AddBlacklist(ctx, 1322); err != nil {
+		t.Fatalf("AddBlacklist 失败: %v", err)
+	}
+	page, err := client.Friend().BlacklistList(ctx, NewPageQuery(1, 20))
+	if err != nil {
+		t.Fatalf("BlacklistList 失败: %v", err)
+	}
+	if page.List[0].FriendID != 1322 {
+		t.Fatalf("friendId 错误: %+v", page.List[0])
+	}
+	if err := client.Friend().RemoveBlacklist(ctx, 4); err != nil {
+		t.Fatalf("RemoveBlacklist 失败: %v", err)
+	}
+	if err := client.TopicUser().AddBlacklist(ctx, 10); err != nil {
+		t.Fatalf("topic AddBlacklist 失败: %v", err)
+	}
+	users, err := client.TopicUser().BlacklistList(ctx, NewTopicUserListQuery(1, 20, 100))
+	if err != nil {
+		t.Fatalf("topic BlacklistList 失败: %v", err)
+	}
+	if users.List[0].ID != 1 {
+		t.Fatalf("id 错误: %+v", users.List[0])
+	}
+	if err := client.TopicUser().RemoveBlacklist(ctx, 1); err != nil {
+		t.Fatalf("topic RemoveBlacklist 失败: %v", err)
+	}
+	reqs := mock.requestsTo("/api/open/friend/addBlacklist")
+	if len(reqs) != 1 || !strings.Contains(reqs[0].URL, "friendId=1322") {
+		t.Fatalf("friend addBlacklist query 错误: %+v", reqs)
+	}
+	topicList := mock.requestsTo("/api/open/topicUser/blacklistList")
+	var body map[string]any
+	if err := json.Unmarshal([]byte(topicList[0].Body), &body); err != nil {
+		t.Fatalf("body 不是 JSON: %v", err)
+	}
+	params := body["params"].(map[string]any)
+	if params["topicId"] != float64(100) {
+		t.Fatalf("topicId 错误: %v", params["topicId"])
+	}
+}
+
+func TestFormListUsesCurrentAndParams(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/push/api/open/form/list", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"pageSize":20,"total":0,"pages":0,"list":[]}}`)
+	client := newTestClient(mock)
+	status := 1
+	_, err := client.Form().List(context.Background(), NewFormListQueryFilter(1, 20, "满意度", &status))
+	if err != nil {
+		t.Fatalf("Form List 失败: %v", err)
+	}
+	reqs := mock.requestsTo("/push/api/open/form/list")
+	var body map[string]any
+	if err := json.Unmarshal([]byte(reqs[0].Body), &body); err != nil {
+		t.Fatalf("body 不是 JSON: %v", err)
+	}
+	if body["current"] != float64(1) {
+		t.Fatalf("current 错误: %v", body["current"])
+	}
+	params := body["params"].(map[string]any)
+	if params["keyword"] != "满意度" || params["status"] != float64(1) {
+		t.Fatalf("params 错误: %v", params)
+	}
+}
+
+func TestDocImport(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/push/api/open/doc/import", 200,
+		`{"code":200,"msg":"ok","data":{"docCode":"Ab3xY7kP","title":"本周工作同步"}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	imported, err := client.Doc().ImportWord(ctx, []byte("hello"), "本周工作同步.docx")
+	if err != nil {
+		t.Fatalf("ImportWord 失败: %v", err)
+	}
+	if imported.DocCode != "Ab3xY7kP" {
+		t.Fatalf("docCode 错误: %s", imported.DocCode)
+	}
+	reqs := mock.requestsTo("/push/api/open/doc/import")
+	if len(reqs) != 1 || !reqs[0].Raw {
+		t.Fatalf("import 应走 ExecuteRaw: %+v", reqs)
+	}
+	if !strings.Contains(reqs[0].Headers["Content-Type"], "multipart/form-data; boundary=") {
+		t.Fatalf("Content-Type 错误: %s", reqs[0].Headers["Content-Type"])
+	}
+}
+
+func TestExcelImport(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/push/api/open/excel/import", 200,
+		`{"code":200,"msg":"ok","data":{"docCode":"Sh3xY7kP","title":"销售日报"}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	imported, err := client.Excel().ImportExcel(ctx, []byte("xlsx"), "销售日报.xlsx")
+	if err != nil {
+		t.Fatalf("ImportExcel 失败: %v", err)
+	}
+	if imported.DocCode != "Sh3xY7kP" {
+		t.Fatalf("docCode 错误: %s", imported.DocCode)
+	}
+}

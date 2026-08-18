@@ -4,12 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // ExcelAPI 开放接口 - push 表格。
 //
 // 文档：https://www.pushplus.plus/doc/ecosystem/sheet/
 // 基础路径：/push/api/open/excel
+//
+// 表格开放接口不单独提供推送接口。发布后请通过 MessageAPI 推送分享页：
+// template=excel，pushId=docCode。
 type ExcelAPI struct {
 	core *core
 	akm  *AccessKeyManager
@@ -31,6 +37,27 @@ func (a *ExcelAPI) List(ctx context.Context, query *DocListQuery) (*PageResult[D
 // Create 创建空白表格。
 func (a *ExcelAPI) Create(ctx context.Context, title string) (*ExcelVo, error) {
 	return executeOpen[*ExcelVo](ctx, a.core, a.akm, "POST", "/push/api/open/excel/create", map[string]any{"title": title})
+}
+
+// ImportExcel 导入 Excel（.xlsx / .xls）创建表格。标题默认取文件名；创建后默认关闭分享，需再 Publish。
+func (a *ExcelAPI) ImportExcel(ctx context.Context, fileBytes []byte, fileName string) (*ExcelVo, error) {
+	if strings.TrimSpace(fileName) == "" {
+		fileName = "workbook.xlsx"
+	}
+	return executeOpenMultipart[*ExcelVo](ctx, a.core, a.akm, "/push/api/open/excel/import", fileName, guessExcelContentType(fileName), fileBytes)
+}
+
+// ImportExcelFile 从本地路径导入 Excel 创建表格。
+func (a *ExcelAPI) ImportExcelFile(ctx context.Context, filePath string) (*ExcelVo, error) {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, newErrorWithCause(-1, "读取上传文件失败: "+err.Error(), err)
+	}
+	name := filepath.Base(filePath)
+	if name == "." || name == "/" {
+		name = "workbook.xlsx"
+	}
+	return a.ImportExcel(ctx, b, name)
 }
 
 // Content 获取表格元信息与整表 JSON 草稿。
@@ -86,6 +113,17 @@ func (a *ExcelAPI) UpdateShare(ctx context.Context, docCode string, sharePerm in
 		body["shareLogin"] = *shareLogin
 	}
 	return executeOpen[*ExcelVo](ctx, a.core, a.akm, "POST", "/push/api/open/excel/updateShare", body)
+}
+
+func guessExcelContentType(name string) string {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case ".xlsx":
+		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case ".xls":
+		return "application/vnd.ms-excel"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 func stringifyJSONContent(content any) (string, error) {

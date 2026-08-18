@@ -66,3 +66,26 @@ func (a *FriendAPI) EditRemark(ctx context.Context, id int64, remark string) err
 	_, err := executeOpen[any](ctx, a.core, a.akm, "POST", "/api/open/friend/editRemark", body)
 	return err
 }
+
+// AddBlacklist 将好友加入黑名单。加入后将解除双方好友关系，对方无法再添加你。
+func (a *FriendAPI) AddBlacklist(ctx context.Context, friendID int64) error {
+	path := appendQuery("/api/open/friend/addBlacklist", []queryParam{{"friendId", strconv.FormatInt(friendID, 10)}})
+	_, err := executeOpen[any](ctx, a.core, a.akm, "POST", path, nil)
+	return err
+}
+
+// BlacklistList 好友黑名单列表。
+func (a *FriendAPI) BlacklistList(ctx context.Context, query *PageQuery) (*PageResult[FriendBlacklistItem], error) {
+	var body any = query
+	if query == nil {
+		body = struct{}{}
+	}
+	return executeOpen[*PageResult[FriendBlacklistItem]](ctx, a.core, a.akm, "POST", "/api/open/friend/blacklistList", body)
+}
+
+// RemoveBlacklist 解除好友黑名单。解除后不会自动恢复好友关系，需重新扫码添加。
+func (a *FriendAPI) RemoveBlacklist(ctx context.Context, id int64) error {
+	path := appendQuery("/api/open/friend/removeBlacklist", []queryParam{{"id", strconv.FormatInt(id, 10)}})
+	_, err := executeOpen[any](ctx, a.core, a.akm, "POST", path, nil)
+	return err
+}

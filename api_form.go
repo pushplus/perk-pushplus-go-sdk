@@ -9,6 +9,9 @@ import (
 //
 // 文档：https://www.pushplus.plus/doc/ecosystem/form/
 // 基础路径：/push/api/open/form
+//
+// 表单开放接口不单独提供推送接口。发布后请通过 MessageAPI 推送填写页：
+// template=form，pushId=formCode。
 type FormAPI struct {
 	core *core
 	akm  *AccessKeyManager

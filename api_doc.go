@@ -2,12 +2,18 @@ package pushplus
 
 import (
 	"context"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // DocAPI 开放接口 - push 文档。
 //
 // 文档：https://www.pushplus.plus/doc/ecosystem/doc/
 // 基础路径：/push/api/open/doc
+//
+// 文档开放接口不单独提供推送接口。发布后请通过 MessageAPI 推送分享页：
+// template=doc，pushId=docCode。
 type DocAPI struct {
 	core *core
 	akm  *AccessKeyManager
@@ -29,6 +35,27 @@ func (a *DocAPI) List(ctx context.Context, query *DocListQuery) (*PageResult[Doc
 // Create 创建空白文档。
 func (a *DocAPI) Create(ctx context.Context, title string) (*DocVo, error) {
 	return executeOpen[*DocVo](ctx, a.core, a.akm, "POST", "/push/api/open/doc/create", map[string]any{"title": title})
+}
+
+// ImportWord 导入 Word（.docx）创建文档。标题默认取文件名；创建后默认关闭分享，需再 Publish。
+func (a *DocAPI) ImportWord(ctx context.Context, fileBytes []byte, fileName string) (*DocVo, error) {
+	if strings.TrimSpace(fileName) == "" {
+		fileName = "document.docx"
+	}
+	return executeOpenMultipart[*DocVo](ctx, a.core, a.akm, "/push/api/open/doc/import", fileName, guessDocxContentType(fileName), fileBytes)
+}
+
+// ImportWordFile 从本地路径导入 Word（.docx）创建文档。
+func (a *DocAPI) ImportWordFile(ctx context.Context, filePath string) (*DocVo, error) {
+	b, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, newErrorWithCause(-1, "读取上传文件失败: "+err.Error(), err)
+	}
+	name := filepath.Base(filePath)
+	if name == "." || name == "/" {
+		name = "document.docx"
+	}
+	return a.ImportWord(ctx, b, name)
 }
 
 // Content 获取文档元信息与 HTML 草稿正文。
@@ -70,4 +97,11 @@ func (a *DocAPI) UpdateShare(ctx context.Context, docCode string, sharePerm int,
 		body["shareLogin"] = *shareLogin
 	}
 	return executeOpen[*DocVo](ctx, a.core, a.akm, "POST", "/push/api/open/doc/updateShare", body)
+}
+
+func guessDocxContentType(name string) string {
+	if strings.HasSuffix(strings.ToLower(name), ".docx") {
+		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	}
+	return "application/octet-stream"
 }
