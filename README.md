@@ -6,7 +6,7 @@
 - AccessKey **自动获取、缓存、过期前刷新、失效自动重试**，调用方无感知
 - **本地限流守卫**：发送接口命中 `code=900`（请求次数过多）时自动短路同 token 的后续调用，避免无效请求与账号进一步受限（[官方建议](https://www.pushplus.plus/doc/guide/code.html)）
 - 单条 `/send`、多渠道 `/batchSend`、消息回调（`message_complate` / `add_topic_user` / `add_friend`）类型化解析
-- 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、公众号/企业微信/邮箱渠道、ClawBot、功能设置、预处理、图片服务、push 表单、push 文档、push 表格
+- 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、公众号/企业微信/邮箱渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务、push 表单、push 文档、push 表格
 - 强类型枚举（`Channel`、`Template`、`SendStatus`、`WebhookType`、`CallbackEvent`、`ErrorCode`）
 
 ## 快速开始
@@ -140,6 +140,23 @@ id, err := client.Webhook().Add(ctx, &pushplus.WebhookSaveRequest{
     WebhookURL:  "https://api.day.app/xxxx",
 })
 
+// QQ 机器人：绑定 -> 认领群 -> 建配置 -> 发到群
+link, err := client.QQBot().GetBindLink(ctx, false)   // link.URL 生成二维码，或私聊发送 link.BindCode
+bind, err := client.QQBot().BotInfo(ctx)              // bind.IsBind == 1 表示已绑定
+groups, err := client.QQBot().GroupList(ctx)
+err = client.QQBot().Add(ctx, &pushplus.QQBotSaveRequest{
+    QQName:    "运维告警群",
+    QQCode:    "ops-group",
+    QQGroupID: groups[0].ID,
+})
+_, err = client.Send(ctx, &pushplus.SendRequest{
+    Title:    "服务告警",
+    Content:  "订单服务响应超时",
+    Channel:  pushplus.ChannelQQ,
+    Option:   "ops-group", // 不传 Option 则发给自己
+    Template: pushplus.TemplateTxt,
+})
+
 // 功能设置
 err = client.Setting().ChangeIsSend(ctx, 1)
 
@@ -205,10 +222,11 @@ _, err = client.Send(ctx, &pushplus.SendRequest{
 | `client.Webhook()` | 七 渠道配置 - webhook |
 | `client.Channel()` | 七 渠道配置 - 公众号/企业微信/邮箱 |
 | `client.ClawBot()` | 八 微信 ClawBot 接口 |
-| `client.Setting()` | 九 功能设置接口 |
-| `client.Friend()` | 十 好友功能接口 |
-| `client.Pre()` | 十一 预处理信息接口 |
-| `client.Image()` | 十二 图片服务接口 |
+| `client.QQBot()` | 九 QQ 机器人接口 |
+| `client.Setting()` | 十 功能设置接口 |
+| `client.Friend()` | 十一 好友功能接口 |
+| `client.Pre()` | 十二 预处理信息接口 |
+| `client.Image()` | 十三 图片服务接口 |
 | `client.Form()` | push 表单开放接口 |
 | `client.Doc()` | push 文档开放接口 |
 | `client.Excel()` | push 表格开放接口 |

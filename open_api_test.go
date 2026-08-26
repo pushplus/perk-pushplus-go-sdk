@@ -118,6 +118,75 @@ func TestClawBotQrcodeStatusParamName(t *testing.T) {
 	}
 }
 
+func TestQQBotBindAndGroupConfig(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/api/open/qqBot/getBindLink", 200,
+		`{"code":200,"msg":"ok","data":{"url":"https://qun.qq.com/qunpro/robot/share?robot_appid=1","bindCode":"A1B2C3","expireSeconds":300,"botName":"pushplus"}}`)
+	mock.enqueue("/api/open/qqBot/botInfo", 200,
+		`{"code":200,"msg":"ok","data":{"isBind":1,"receiveStatus":1,"createTime":"2026-08-26 10:00:00","botInfo":{"appId":"1","username":"pushplus"}}}`)
+	mock.enqueue("/api/open/qqBot/groupList", 200,
+		`{"code":200,"msg":"ok","data":[{"id":9,"groupOpenId":"OPEN-1","status":1,"groupName":"运维告警群","groupTags":["运维"],"groupMemberNum":128}]}`)
+	mock.enqueue("/api/open/qqBot/list", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"pageSize":20,"total":1,"pages":1,"list":[{"id":3,"qqName":"运维告警群","qqCode":"ops-group","sendType":2,"qqGroupId":9}]}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	link, err := client.QQBot().GetBindLink(ctx, true)
+	if err != nil {
+		t.Fatalf("GetBindLink 失败: %v", err)
+	}
+	if link.BindCode != "A1B2C3" || link.ExpireSeconds != 300 {
+		t.Fatalf("绑定链接解析错误: %+v", link)
+	}
+	if !strings.Contains(mock.requestsTo("getBindLink")[0].URL, "refresh=true") {
+		t.Fatalf("refresh 参数未传递: %s", mock.requestsTo("getBindLink")[0].URL)
+	}
+
+	bind, err := client.QQBot().BotInfo(ctx)
+	if err != nil {
+		t.Fatalf("BotInfo 失败: %v", err)
+	}
+	if bind.IsBind != 1 || bind.BotInfo == nil || bind.BotInfo.Username != "pushplus" {
+		t.Fatalf("绑定状态解析错误: %+v", bind)
+	}
+
+	groups, err := client.QQBot().GroupList(ctx)
+	if err != nil {
+		t.Fatalf("GroupList 失败: %v", err)
+	}
+	if len(groups) != 1 || groups[0].ID != 9 || len(groups[0].GroupTags) != 1 {
+		t.Fatalf("QQ 群列表解析错误: %+v", groups)
+	}
+
+	if err := client.QQBot().Add(ctx, &QQBotSaveRequest{QQName: "运维告警群", QQCode: "ops-group", QQGroupID: 9}); err != nil {
+		t.Fatalf("Add 失败: %v", err)
+	}
+	var addBody map[string]any
+	if err := json.Unmarshal([]byte(mock.requestsTo("/api/open/qqBot/add")[0].Body), &addBody); err != nil {
+		t.Fatalf("解析新增请求体失败: %v", err)
+	}
+	if addBody["sendType"] != float64(sendTypeQQGroup) || addBody["qqGroupId"] != float64(9) {
+		t.Fatalf("新增请求体缺少默认 sendType 或群编号: %v", addBody)
+	}
+
+	page, err := client.QQBot().List(ctx, NewPageQuery(1, 20))
+	if err != nil {
+		t.Fatalf("List 失败: %v", err)
+	}
+	if len(page.List) != 1 || page.List[0].QQCode != "ops-group" {
+		t.Fatalf("配置列表解析错误: %+v", page)
+	}
+
+	if err := client.QQBot().Delete(ctx, 3); err != nil {
+		t.Fatalf("Delete 失败: %v", err)
+	}
+	del := mock.requestsTo("/api/open/qqBot/delete")[0]
+	if del.Method != "DELETE" || !strings.Contains(del.URL, "id=3") {
+		t.Fatalf("删除请求不正确: %s %s", del.Method, del.URL)
+	}
+}
+
 func TestSettingReceiveLimitParamName(t *testing.T) {
 	mock := newMockHTTPRequester()
 	mock.enqueue("getAccessKey", 200, accessKeyResponse)

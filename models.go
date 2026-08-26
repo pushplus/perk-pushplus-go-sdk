@@ -169,6 +169,7 @@ type SendCount struct {
 	CpSendCount      int `json:"cpSendCount"`
 	WebhookSendCount int `json:"webhookSendCount"`
 	MailSendCount    int `json:"mailSendCount"`
+	QQBotSendCount   int `json:"qqBotSendCount"`
 }
 
 /* ============================== 开放接口 - 消息令牌 ============================== */
@@ -430,6 +431,89 @@ type ClawBotMessage struct {
 	// Type 1 文字 / 3 语音。
 	Type int    `json:"type"`
 	Text string `json:"text"`
+}
+
+/* ============================== 开放接口 - QQ 机器人 ============================== */
+
+// QQBotBindLink QQ 机器人绑定链接与绑定码。
+type QQBotBindLink struct {
+	// URL 带参分享链接，用于生成扫码二维码；已绑定用户再次获取时可能为空。
+	URL string `json:"url"`
+	// BindCode 绑定码。已是好友时扫码收不到加好友事件，需私聊发送该码；认领 QQ 群也用此码。
+	BindCode string `json:"bindCode"`
+	// ExpireSeconds 有效期秒数，默认 300。
+	ExpireSeconds int `json:"expireSeconds"`
+	// BotAppID 为当前用户分配的官方机器人 appId。
+	BotAppID  string `json:"botAppId"`
+	BotName   string `json:"botName"`
+	BotAvatar string `json:"botAvatar"`
+}
+
+// QQBotInfo QQ 机器人详情。
+type QQBotInfo struct {
+	BotID    string `json:"botId"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar"`
+	AppID    string `json:"appId"`
+	// ShareURL 官方分享链接，可用于拉机器人进群。
+	ShareURL string `json:"shareUrl"`
+}
+
+// QQBotBindInfo QQ 机器人绑定状态。
+type QQBotBindInfo struct {
+	// IsBind 0 未绑定，1 已绑定。
+	IsBind int `json:"isBind"`
+	// ReceiveStatus 1 可接收，0 用户已关闭单聊接收。
+	ReceiveStatus int    `json:"receiveStatus"`
+	CreateTime    string `json:"createTime"`
+	// BotInfo 机器人详情，取不到时为 nil。
+	BotInfo *QQBotInfo `json:"botInfo"`
+}
+
+// QQGroupItem 机器人已加入的 QQ 群。
+type QQGroupItem struct {
+	// ID 群编号；新增渠道配置时作为 QQGroupID 使用。
+	ID          int64  `json:"id"`
+	GroupOpenID string `json:"groupOpenId"`
+	GroupRemark string `json:"groupRemark"`
+	// Status 1 在群，2 群消息接收关闭。
+	Status int `json:"status"`
+	// GroupName 群名称，接口未授权时为空。
+	GroupName       string   `json:"groupName"`
+	GroupFingerMemo string   `json:"groupFingerMemo"`
+	GroupClassText  string   `json:"groupClassText"`
+	GroupTags       []string `json:"groupTags"`
+	GroupMemberNum  int      `json:"groupMemberNum"`
+	CreateTime      string   `json:"createTime"`
+}
+
+// QQBotItem QQ 机器人渠道配置列表项。
+type QQBotItem struct {
+	ID     int64  `json:"id"`
+	QQName string `json:"qqName"`
+	// QQCode 配置编码；发送消息时作为 Option 传入。
+	QQCode string `json:"qqCode"`
+	// SendType 2 发到 QQ 群。
+	SendType    int    `json:"sendType"`
+	QQGroupID   int64  `json:"qqGroupId"`
+	GroupRemark string `json:"groupRemark"`
+	GroupOpenID string `json:"groupOpenId"`
+	GroupName   string `json:"groupName"`
+	UpdateTime  string `json:"updateTime"`
+}
+
+// QQBotSaveRequest 新增/修改 QQ 机器人渠道配置请求。
+type QQBotSaveRequest struct {
+	// ID 修改时必填。
+	ID int64 `json:"id,omitempty"`
+	// QQName 配置名称，必填，最多 64 个字符。
+	QQName string `json:"qqName,omitempty"`
+	// QQCode 配置编码，新增必填；仅支持字母、数字、下划线和中划线，创建后不可修改。
+	QQCode string `json:"qqCode,omitempty"`
+	// SendType 发送类型；留空时 SDK 自动填 2（发到 QQ 群）。
+	SendType int `json:"sendType,omitempty"`
+	// QQGroupID QQ 群编号，必填，取自 GroupList 返回的 ID。
+	QQGroupID int64 `json:"qqGroupId,omitempty"`
 }
 
 /* ============================== 开放接口 - 功能设置 ============================== */

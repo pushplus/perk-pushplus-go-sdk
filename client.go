@@ -4,7 +4,7 @@
 //   - 本地限流守卫：发送接口命中 code=900 时自动短路同 token 的后续调用
 //   - 单条 /send、多渠道 /batchSend、消息回调类型化解析
 //   - 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、
-//     公众号/企业微信/邮箱渠道、ClawBot、功能设置、预处理、图片服务、
+//     公众号/企业微信/邮箱渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务、
 //     push 表单、push 文档、push 表格
 package pushplus
 
@@ -31,6 +31,7 @@ type Client struct {
 	webhook      *WebhookAPI
 	channel      *ChannelAPI
 	clawBot      *ClawBotAPI
+	qqBot        *QQBotAPI
 	setting      *SettingAPI
 	pre          *PreAPI
 	image        *ImageAPI
@@ -82,6 +83,7 @@ func NewClient(opts ...Option) *Client {
 		webhook:          newWebhookAPI(c, akm),
 		channel:          newChannelAPI(c, akm),
 		clawBot:          newClawBotAPI(c, akm),
+		qqBot:            newQQBotAPI(c, akm),
 		setting:          newSettingAPI(c, akm),
 		pre:              newPreAPI(c, akm),
 		image:            newImageAPI(c, akm),
@@ -139,6 +141,9 @@ func (c *Client) Channel() *ChannelAPI { return c.channel }
 
 // ClawBot 开放接口 - 微信 ClawBot。
 func (c *Client) ClawBot() *ClawBotAPI { return c.clawBot }
+
+// QQBot 开放接口 - QQ 机器人。
+func (c *Client) QQBot() *QQBotAPI { return c.qqBot }
 
 // Setting 开放接口 - 功能设置。
 func (c *Client) Setting() *SettingAPI { return c.setting }

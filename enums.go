@@ -22,6 +22,8 @@ const (
 	ChannelApp Channel = "app"
 	// ChannelClawBot 微信 ClawBot。
 	ChannelClawBot Channel = "clawbot"
+	// ChannelQQ QQ 机器人；不带 Option 发给自己，Option 填配置编码则发到对应 QQ 群。
+	ChannelQQ Channel = "qq"
 )
 
 // Template 消息模板，JSON 序列化为字符串编码。
