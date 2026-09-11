@@ -5,7 +5,7 @@
 //   - 单条 /send、多渠道 /batchSend、消息回调类型化解析
 //   - 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、
 //     公众号/企业微信/邮箱渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务、
-//     push 表单、push 文档、push 表格
+//     push 表单、push 文档、push 表格、消息规则
 package pushplus
 
 import (
@@ -38,6 +38,8 @@ type Client struct {
 	form         *FormAPI
 	doc          *DocAPI
 	excel        *ExcelAPI
+	forwardRule  *ForwardRuleAPI
+	forwardLog   *ForwardLogAPI
 }
 
 // NewClient 创建 PushPlus 客户端。
@@ -90,6 +92,8 @@ func NewClient(opts ...Option) *Client {
 		form:             newFormAPI(c, akm),
 		doc:              newDocAPI(c, akm),
 		excel:            newExcelAPI(c, akm),
+		forwardRule:      newForwardRuleAPI(c, akm),
+		forwardLog:       newForwardLogAPI(c, akm),
 	}
 }
 
@@ -162,6 +166,12 @@ func (c *Client) Doc() *DocAPI { return c.doc }
 
 // Excel 开放接口 - push 表格。
 func (c *Client) Excel() *ExcelAPI { return c.excel }
+
+// ForwardRule 开放接口 - 消息规则（需会员）。
+func (c *Client) ForwardRule() *ForwardRuleAPI { return c.forwardRule }
+
+// ForwardLog 开放接口 - 消息规则触发记录。
+func (c *Client) ForwardLog() *ForwardLogAPI { return c.forwardLog }
 
 /* ============================== 便捷转发方法 ============================== */
 

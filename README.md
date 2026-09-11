@@ -6,7 +6,7 @@
 - AccessKey **自动获取、缓存、过期前刷新、失效自动重试**，调用方无感知
 - **本地限流守卫**：发送接口命中 `code=900`（请求次数过多）时自动短路同 token 的后续调用，避免无效请求与账号进一步受限（[官方建议](https://www.pushplus.plus/doc/guide/code.html)）
 - 单条 `/send`、多渠道 `/batchSend`、消息回调（`message_complate` / `add_topic_user` / `add_friend`）类型化解析
-- 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、公众号/企业微信/邮箱渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务、push 表单、push 文档、push 表格
+- 全部开放接口：消息、用户、消息令牌、群组、群组用户、好友、Webhook、公众号/企业微信/邮箱渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务、push 表单、push 文档、push 表格、消息规则
 - 强类型枚举（`Channel`、`Template`、`SendStatus`、`WebhookType`、`CallbackEvent`、`ErrorCode`）
 
 ## 快速开始
@@ -160,6 +160,23 @@ _, err = client.Send(ctx, &pushplus.SendRequest{
 // 功能设置
 err = client.Setting().ChangeIsSend(ctx, 1)
 
+// 消息规则（会员）
+tokenID := int64(-1)
+sourceType := 1
+err = client.ForwardRule().SaveSetting(ctx, int(pushplus.ForwardModeOnFallback))
+err = client.ForwardRule().Add(ctx, &pushplus.ForwardRuleSaveRequest{
+    RuleName:   "阿里云监控多渠道",
+    TokenID:    &tokenID,
+    SourceType: &sourceType,
+    TitleTemplate: "{{alertName}}",
+    Variables: []pushplus.ForwardVariable{
+        {VarName: "alertName", SourceType: 3, ExtractType: 1, ExtractKey: "alertName"},
+    },
+})
+rules, err := client.ForwardRule().List(ctx, pushplus.NewPageQuery(1, 20))
+matchResult := 1
+logs, err := client.ForwardLog().List(ctx, pushplus.NewForwardLogListQueryFilter(1, 20, nil, &matchResult))
+
 // 图片服务（一行上传到 PushPlus 图床）
 img, err := client.Image().UploadFile(ctx, "/tmp/logo.png")
 url := img.URL // 直接拿到可访问的图片地址
@@ -230,6 +247,8 @@ _, err = client.Send(ctx, &pushplus.SendRequest{
 | `client.Form()` | push 表单开放接口 |
 | `client.Doc()` | push 文档开放接口 |
 | `client.Excel()` | push 表格开放接口 |
+| `client.ForwardRule()` | 十四 消息规则接口 |
+| `client.ForwardLog()` | 十四 消息规则触发记录 |
 
 ## 图片服务
 

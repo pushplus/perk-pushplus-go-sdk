@@ -189,3 +189,103 @@ const (
 	// ShareLoginRequired 需登录。
 	ShareLoginRequired ShareLogin = 1
 )
+
+// ForwardMode 消息规则总开关。
+type ForwardMode int
+
+const (
+	// ForwardModeOff 关闭（推送与原来一致）。
+	ForwardModeOff ForwardMode = 0
+	// ForwardModeOnFallback 开启，未命中时仍按默认方式推送。
+	ForwardModeOnFallback ForwardMode = 1
+	// ForwardModeOnStrict 开启，未命中时不推送。
+	ForwardModeOnStrict ForwardMode = 2
+)
+
+// ForwardSourceType 消息规则触发来源。
+type ForwardSourceType int
+
+const (
+	// ForwardSourceTypeAll 全部。
+	ForwardSourceTypeAll ForwardSourceType = 0
+	// ForwardSourceTypeAPI 消息接口。
+	ForwardSourceTypeAPI ForwardSourceType = 1
+	// ForwardSourceTypeMail 邮件。
+	ForwardSourceTypeMail ForwardSourceType = 2
+)
+
+// ForwardVarSourceType 模板变量来源。
+type ForwardVarSourceType int
+
+const (
+	// ForwardVarSourceTypeHeader 请求头。
+	ForwardVarSourceTypeHeader ForwardVarSourceType = 1
+	// ForwardVarSourceTypeQuery Query 参数。
+	ForwardVarSourceTypeQuery ForwardVarSourceType = 2
+	// ForwardVarSourceTypeBody 请求体。
+	ForwardVarSourceTypeBody ForwardVarSourceType = 3
+	// ForwardVarSourceTypePath URL 路径。
+	ForwardVarSourceTypePath ForwardVarSourceType = 4
+	// ForwardVarSourceTypeSubject 主题（邮件）。
+	ForwardVarSourceTypeSubject ForwardVarSourceType = 5
+)
+
+// ForwardExtractType 模板变量提取方式。
+type ForwardExtractType int
+
+const (
+	// ForwardExtractTypeSerialized 序列化数据。
+	ForwardExtractTypeSerialized ForwardExtractType = 1
+	// ForwardExtractTypeRegex 正则表达式。
+	ForwardExtractTypeRegex ForwardExtractType = 2
+	// ForwardExtractTypeJSONPath JSONPath。
+	ForwardExtractTypeJSONPath ForwardExtractType = 3
+	// ForwardExtractTypeRaw 原始全文。
+	ForwardExtractTypeRaw ForwardExtractType = 4
+)
+
+// ForwardMatchResult 触发记录匹配结果。
+type ForwardMatchResult int
+
+const (
+	// ForwardMatchResultNotMatched 条件不满足。
+	ForwardMatchResultNotMatched ForwardMatchResult = 0
+	// ForwardMatchResultForwarded 已转发。
+	ForwardMatchResultForwarded ForwardMatchResult = 1
+	// ForwardMatchResultRateLimited 频率限制。
+	ForwardMatchResultRateLimited ForwardMatchResult = 2
+	// ForwardMatchResultOutOfTime 不在触发时间段。
+	ForwardMatchResultOutOfTime ForwardMatchResult = 3
+	// ForwardMatchResultError 执行异常。
+	ForwardMatchResultError ForwardMatchResult = 4
+)
+
+// ForwardConditionOperator 图形化触发条件运算符。
+type ForwardConditionOperator string
+
+const (
+	ForwardConditionOperatorEQ          ForwardConditionOperator = "eq"
+	ForwardConditionOperatorNE          ForwardConditionOperator = "ne"
+	ForwardConditionOperatorContains    ForwardConditionOperator = "contains"
+	ForwardConditionOperatorNotContains ForwardConditionOperator = "notContains"
+	ForwardConditionOperatorStartsWith  ForwardConditionOperator = "startsWith"
+	ForwardConditionOperatorEndsWith    ForwardConditionOperator = "endsWith"
+	ForwardConditionOperatorRegex       ForwardConditionOperator = "regex"
+	ForwardConditionOperatorGT          ForwardConditionOperator = "gt"
+	ForwardConditionOperatorGTE         ForwardConditionOperator = "gte"
+	ForwardConditionOperatorLT          ForwardConditionOperator = "lt"
+	ForwardConditionOperatorLTE         ForwardConditionOperator = "lte"
+	ForwardConditionOperatorIn          ForwardConditionOperator = "in"
+	ForwardConditionOperatorNotIn       ForwardConditionOperator = "notIn"
+	ForwardConditionOperatorEmpty       ForwardConditionOperator = "empty"
+	ForwardConditionOperatorNotEmpty    ForwardConditionOperator = "notEmpty"
+)
+
+// ForwardMessageType 消息规则发送目标的消息类型。也支持写成 {{变量名}}。
+type ForwardMessageType string
+
+const (
+	ForwardMessageTypeOne    ForwardMessageType = "one"
+	ForwardMessageTypeTopic  ForwardMessageType = "topic"
+	ForwardMessageTypeFriend ForwardMessageType = "friend"
+)

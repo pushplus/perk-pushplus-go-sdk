@@ -900,3 +900,209 @@ type ExcelContent struct {
 	ExcelVo
 	Content string `json:"content,omitempty"`
 }
+
+/* ============================== 开放接口 - 消息规则 ============================== */
+
+// ForwardConditionItem 图形化触发条件中的单条比较。
+type ForwardConditionItem struct {
+	VarName  string `json:"varName,omitempty"`
+	Operator string `json:"operator,omitempty"`
+	Value    string `json:"value,omitempty"`
+}
+
+// ForwardCondition 图形化触发条件。
+type ForwardCondition struct {
+	Logic string                 `json:"logic,omitempty"`
+	Items []ForwardConditionItem `json:"items,omitempty"`
+}
+
+// ForwardVariable 模板变量。
+type ForwardVariable struct {
+	ID           int64  `json:"id,omitempty"`
+	RuleID       int64  `json:"ruleId,omitempty"`
+	VarName      string `json:"varName,omitempty"`
+	SourceType   int    `json:"sourceType,omitempty"`
+	ExtractType  int    `json:"extractType,omitempty"`
+	ExtractKey   string `json:"extractKey,omitempty"`
+	DefaultValue string `json:"defaultValue,omitempty"`
+	Sort         int    `json:"sort,omitempty"`
+}
+
+// ForwardTarget 发送目标。
+type ForwardTarget struct {
+	ID          int64  `json:"id,omitempty"`
+	RuleID      int64  `json:"ruleId,omitempty"`
+	Channel     string `json:"channel,omitempty"`
+	Option      string `json:"option,omitempty"`
+	MessageType string `json:"messageType,omitempty"`
+	Topic       string `json:"topic,omitempty"`
+	To          string `json:"to,omitempty"`
+	Sort        int    `json:"sort,omitempty"`
+}
+
+// ForwardRuleItem 消息规则列表项。
+type ForwardRuleItem struct {
+	ID             int64  `json:"id"`
+	TokenID        int64  `json:"tokenId"`
+	TokenName      string `json:"tokenName"`
+	RuleName       string `json:"ruleName"`
+	SourceType     int    `json:"sourceType"`
+	SourceTypeName string `json:"sourceTypeName"`
+	Status         int    `json:"status"`
+	Sort           int    `json:"sort"`
+	ConditionExpr  string `json:"conditionExpr"`
+	TargetCount    int    `json:"targetCount"`
+	CreateTime     string `json:"createTime"`
+}
+
+// ForwardRuleDetail 消息规则详情。
+type ForwardRuleDetail struct {
+	ID              int64             `json:"id"`
+	TokenID         int64             `json:"tokenId"`
+	RuleName        string            `json:"ruleName"`
+	SourceType      int               `json:"sourceType"`
+	Status          int               `json:"status"`
+	Sort            int               `json:"sort"`
+	ConditionExpr   string            `json:"conditionExpr"`
+	Condition       *ForwardCondition `json:"condition,omitempty"`
+	TitleTemplate   string            `json:"titleTemplate"`
+	ContentTemplate string            `json:"contentTemplate"`
+	Template        string            `json:"template"`
+	Pre             string            `json:"pre"`
+	StopOnMatch     int               `json:"stopOnMatch"`
+	LimitPeriod     int               `json:"limitPeriod"`
+	LimitCount      int               `json:"limitCount"`
+	ActiveStartTime string            `json:"activeStartTime"`
+	ActiveEndTime   string            `json:"activeEndTime"`
+	ActiveWeekdays  string            `json:"activeWeekdays"`
+	Remark          string            `json:"remark"`
+	Variables       []ForwardVariable `json:"variables"`
+	Targets         []ForwardTarget   `json:"targets"`
+	CreateTime      string            `json:"createTime"`
+}
+
+// ForwardRuleSaveRequest 新增 / 修改消息规则。修改时 ID 必填。
+// TokenID / Status 等使用指针，以便正确发送 0（用户令牌 / 停用）。
+type ForwardRuleSaveRequest struct {
+	ID              int64             `json:"id,omitempty"`
+	RuleName        string            `json:"ruleName,omitempty"`
+	TokenID         *int64            `json:"tokenId,omitempty"`
+	SourceType      *int              `json:"sourceType,omitempty"`
+	Status          *int              `json:"status,omitempty"`
+	Sort            *int              `json:"sort,omitempty"`
+	Condition       *ForwardCondition `json:"condition,omitempty"`
+	ConditionExpr   string            `json:"conditionExpr,omitempty"`
+	TitleTemplate   string            `json:"titleTemplate,omitempty"`
+	ContentTemplate string            `json:"contentTemplate,omitempty"`
+	Template        string            `json:"template,omitempty"`
+	Pre             string            `json:"pre,omitempty"`
+	StopOnMatch     *int              `json:"stopOnMatch,omitempty"`
+	LimitPeriod     *int              `json:"limitPeriod,omitempty"`
+	LimitCount      *int              `json:"limitCount,omitempty"`
+	ActiveStartTime string            `json:"activeStartTime,omitempty"`
+	ActiveEndTime   string            `json:"activeEndTime,omitempty"`
+	ActiveWeekdays  string            `json:"activeWeekdays,omitempty"`
+	Remark          string            `json:"remark,omitempty"`
+	Variables       []ForwardVariable `json:"variables,omitempty"`
+	Targets         []ForwardTarget   `json:"targets,omitempty"`
+}
+
+// ForwardRuleTestRequest 测试消息规则请求。不会真正发送消息。
+type ForwardRuleTestRequest struct {
+	SourceType      *int              `json:"sourceType,omitempty"`
+	ContentType     string            `json:"contentType,omitempty"`
+	Headers         map[string]any    `json:"headers,omitempty"`
+	Query           map[string]any    `json:"query,omitempty"`
+	Body            string            `json:"body,omitempty"`
+	Title           string            `json:"title,omitempty"`
+	MailFrom        string            `json:"mailFrom,omitempty"`
+	MailTo          string            `json:"mailTo,omitempty"`
+	MailCc          string            `json:"mailCc,omitempty"`
+	Condition       *ForwardCondition `json:"condition,omitempty"`
+	ConditionExpr   string            `json:"conditionExpr,omitempty"`
+	TitleTemplate   string            `json:"titleTemplate,omitempty"`
+	ContentTemplate string            `json:"contentTemplate,omitempty"`
+	Template        string            `json:"template,omitempty"`
+	Pre             string            `json:"pre,omitempty"`
+	Variables       []ForwardVariable `json:"variables,omitempty"`
+}
+
+// ForwardRuleTestResult 测试消息规则结果。
+type ForwardRuleTestResult struct {
+	Variables     map[string]any `json:"variables"`
+	Matched       bool           `json:"matched"`
+	ConditionExpr string         `json:"conditionExpr"`
+	ErrorMessage  string         `json:"errorMessage"`
+	Title         string         `json:"title"`
+	Content       string         `json:"content"`
+	Template      string         `json:"template"`
+}
+
+// ForwardRuleSetting 消息规则总开关。
+type ForwardRuleSetting struct {
+	// Mode 0-关闭，1-开启且未命中仍推送，2-开启且未命中不推送。
+	Mode int `json:"mode"`
+}
+
+// ForwardLogListQuery 触发记录分页查询。官方结构是 {current, pageSize, params:{ruleId, matchResult}}。
+type ForwardLogListQuery struct {
+	Current  int            `json:"current,omitempty"`
+	PageSize int            `json:"pageSize,omitempty"`
+	Params   map[string]any `json:"params,omitempty"`
+}
+
+// NewForwardLogListQuery 创建触发记录分页查询。
+func NewForwardLogListQuery(current, pageSize int) *ForwardLogListQuery {
+	return &ForwardLogListQuery{Current: current, PageSize: pageSize}
+}
+
+// NewForwardLogListQueryFilter 创建带规则编号 / 匹配结果筛选的触发记录分页查询。
+func NewForwardLogListQueryFilter(current, pageSize int, ruleID *int64, matchResult *int) *ForwardLogListQuery {
+	params := map[string]any{}
+	if ruleID != nil {
+		params["ruleId"] = *ruleID
+	}
+	if matchResult != nil {
+		params["matchResult"] = *matchResult
+	}
+	q := &ForwardLogListQuery{Current: current, PageSize: pageSize}
+	if len(params) > 0 {
+		q.Params = params
+	}
+	return q
+}
+
+// ForwardLogItem 触发记录列表项。
+type ForwardLogItem struct {
+	ID              int64  `json:"id"`
+	RuleID          int64  `json:"ruleId"`
+	RuleName        string `json:"ruleName"`
+	SourceType      int    `json:"sourceType"`
+	SourceTypeName  string `json:"sourceTypeName"`
+	RequestIP       string `json:"requestIp"`
+	MatchResult     int    `json:"matchResult"`
+	MatchResultName string `json:"matchResultName"`
+	ShortCodes      string `json:"shortCodes"`
+	ErrorMessage    string `json:"errorMessage"`
+	CreateTime      string `json:"createTime"`
+}
+
+// ForwardLogDetail 触发记录详情。
+type ForwardLogDetail struct {
+	ID              int64  `json:"id"`
+	RuleID          int64  `json:"ruleId"`
+	RuleName        string `json:"ruleName"`
+	SourceType      int    `json:"sourceType"`
+	SourceTypeName  string `json:"sourceTypeName"`
+	RequestIP       string `json:"requestIp"`
+	RequestMethod   string `json:"requestMethod"`
+	RequestHeaders  string `json:"requestHeaders"`
+	RequestQuery    string `json:"requestQuery"`
+	RequestBody     string `json:"requestBody"`
+	Variables       string `json:"variables"`
+	MatchResult     int    `json:"matchResult"`
+	MatchResultName string `json:"matchResultName"`
+	ShortCodes      string `json:"shortCodes"`
+	ErrorMessage    string `json:"errorMessage"`
+	CreateTime      string `json:"createTime"`
+}

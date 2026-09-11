@@ -383,6 +383,105 @@ func TestDocImport(t *testing.T) {
 	}
 }
 
+func TestForwardRuleAndLog(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/api/open/forwardRule/list", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"list":[{"id":1,"ruleName":"阿里云监控多渠道","sourceType":1}]}}`)
+	mock.enqueue("/api/open/forwardRule/add", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/api/open/forwardRule/test", 200,
+		`{"code":200,"msg":"ok","data":{"matched":true,"title":"ECS-内存使用率","conditionExpr":"alertState == 'ALERT'"}}`)
+	mock.enqueue("/api/open/forwardRule/setting?mode=1", 200, `{"code":200,"msg":"ok"}`)
+	mock.enqueue("/api/open/forwardRule/setting", 200, `{"code":200,"msg":"ok","data":{"mode":1}}`)
+	mock.enqueue("/api/open/forwardLog/list", 200,
+		`{"code":200,"msg":"ok","data":{"pageNum":1,"list":[{"id":9,"ruleId":1,"matchResult":1}]}}`)
+	mock.enqueue("/api/open/forwardLog/detail", 200,
+		`{"code":200,"msg":"ok","data":{"id":9,"ruleId":1,"requestBody":"{\"alertState\":\"ALERT\"}"}}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	page, err := client.ForwardRule().List(ctx, NewPageQuery(1, 20))
+	if err != nil {
+		t.Fatalf("List 失败: %v", err)
+	}
+	if page.List[0].RuleName != "阿里云监控多渠道" {
+		t.Fatalf("规则名错误: %+v", page.List[0])
+	}
+
+	tokenID := int64(-1)
+	sourceType := 1
+	if err := client.ForwardRule().Add(ctx, &ForwardRuleSaveRequest{
+		RuleName:   "阿里云监控多渠道",
+		TokenID:    &tokenID,
+		SourceType: &sourceType,
+		Variables:  []ForwardVariable{{VarName: "alertState", SourceType: 3, ExtractType: 1, ExtractKey: "alertState"}},
+	}); err != nil {
+		t.Fatalf("Add 失败: %v", err)
+	}
+	tested, err := client.ForwardRule().Test(ctx, &ForwardRuleTestRequest{
+		SourceType:    &sourceType,
+		Body:          `{"alertState":"ALERT"}`,
+		ConditionExpr: "alertState == 'ALERT'",
+	})
+	if err != nil {
+		t.Fatalf("Test 失败: %v", err)
+	}
+	if !tested.Matched {
+		t.Fatalf("期望命中: %+v", tested)
+	}
+	setting, err := client.ForwardRule().GetSetting(ctx)
+	if err != nil {
+		t.Fatalf("GetSetting 失败: %v", err)
+	}
+	if setting.Mode != 1 {
+		t.Fatalf("mode 错误: %+v", setting)
+	}
+	if err := client.ForwardRule().SaveSetting(ctx, int(ForwardModeOnFallback)); err != nil {
+		t.Fatalf("SaveSetting 失败: %v", err)
+	}
+
+	matchResult := 1
+	ruleID := int64(1)
+	logs, err := client.ForwardLog().List(ctx, NewForwardLogListQueryFilter(1, 20, &ruleID, &matchResult))
+	if err != nil {
+		t.Fatalf("Log List 失败: %v", err)
+	}
+	if logs.List[0].ID != 9 {
+		t.Fatalf("log id 错误: %+v", logs.List[0])
+	}
+	detail, err := client.ForwardLog().Detail(ctx, 9)
+	if err != nil {
+		t.Fatalf("Log Detail 失败: %v", err)
+	}
+	if !strings.Contains(detail.RequestBody, "ALERT") {
+		t.Fatalf("requestBody 错误: %+v", detail)
+	}
+
+	addReqs := mock.requestsTo("/api/open/forwardRule/add")
+	var addBody map[string]any
+	if err := json.Unmarshal([]byte(addReqs[0].Body), &addBody); err != nil {
+		t.Fatalf("add body 不是 JSON: %v", err)
+	}
+	if addBody["tokenId"] != float64(-1) {
+		t.Fatalf("tokenId 应发送 -1: %v", addBody["tokenId"])
+	}
+	if len(mock.requestsTo("setting?mode=1")) == 0 {
+		t.Fatal("SaveSetting 应带 mode=1")
+	}
+	logList := mock.requestsTo("/api/open/forwardLog/list")
+	var listBody map[string]any
+	if err := json.Unmarshal([]byte(logList[0].Body), &listBody); err != nil {
+		t.Fatalf("log list body 不是 JSON: %v", err)
+	}
+	params := listBody["params"].(map[string]any)
+	if params["matchResult"] != float64(1) {
+		t.Fatalf("matchResult 错误: %v", params)
+	}
+	if !strings.Contains(mock.requestsTo("/api/open/forwardLog/detail")[0].URL, "logId=9") {
+		t.Fatalf("detail 应带 logId: %s", mock.requestsTo("/api/open/forwardLog/detail")[0].URL)
+	}
+}
+
 func TestExcelImport(t *testing.T) {
 	mock := newMockHTTPRequester()
 	mock.enqueue("getAccessKey", 200, accessKeyResponse)
