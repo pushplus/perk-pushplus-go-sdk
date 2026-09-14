@@ -433,6 +433,23 @@ type ClawBotMessage struct {
 	Text string `json:"text"`
 }
 
+/* ============================== 开放接口 - 新消息 ClawBot ============================== */
+
+// CmccBindRequest 新消息 ClawBot 绑定请求。
+type CmccBindRequest struct {
+	// APIKey 中国移动新消息 Channel API Key，必须以 ak_ 或 app_ 开头。
+	APIKey string `json:"apiKey"`
+}
+
+// CmccInfo 新消息 ClawBot 绑定状态。
+type CmccInfo struct {
+	// Bound 是否已绑定；0-未绑定，1-已绑定。
+	Bound int `json:"bound"`
+	// APIKeyMasked 脱敏后的 API Key。
+	APIKeyMasked string `json:"apiKeyMasked"`
+	CreateTime   string `json:"createTime"`
+}
+
 /* ============================== 开放接口 - QQ 机器人 ============================== */
 
 // QQBotBindLink QQ 机器人绑定链接与绑定码。

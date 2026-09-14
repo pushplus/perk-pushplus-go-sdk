@@ -118,6 +118,44 @@ func TestClawBotQrcodeStatusParamName(t *testing.T) {
 	}
 }
 
+func TestCmccBindAndStatus(t *testing.T) {
+	mock := newMockHTTPRequester()
+	mock.enqueue("getAccessKey", 200, accessKeyResponse)
+	mock.enqueue("/api/open/cmcc/bind", 200, `{"code":200,"msg":"绑定成功"}`)
+	mock.enqueue("/api/open/cmcc/info", 200,
+		`{"code":200,"msg":"ok","data":{"bound":1,"apiKeyMasked":"ak_***xxx","createTime":"2026-09-14 10:20:00"}}`)
+	mock.enqueue("/api/open/cmcc/test", 200, `{"code":200,"msg":"测试消息已发送"}`)
+	mock.enqueue("/api/open/cmcc/unbind", 200, `{"code":200,"msg":"执行成功"}`)
+	client := newTestClient(mock)
+	ctx := context.Background()
+
+	if err := client.Cmcc().Bind(ctx, "ak_xxxxxxxxxxxxxxxx"); err != nil {
+		t.Fatalf("Bind 失败: %v", err)
+	}
+	var bindBody map[string]any
+	if err := json.Unmarshal([]byte(mock.requestsTo("/api/open/cmcc/bind")[0].Body), &bindBody); err != nil {
+		t.Fatalf("解析绑定请求体失败: %v", err)
+	}
+	if bindBody["apiKey"] != "ak_xxxxxxxxxxxxxxxx" {
+		t.Fatalf("绑定请求体缺少 apiKey: %v", bindBody)
+	}
+
+	info, err := client.Cmcc().Info(ctx)
+	if err != nil {
+		t.Fatalf("Info 失败: %v", err)
+	}
+	if info.Bound != 1 || info.APIKeyMasked != "ak_***xxx" {
+		t.Fatalf("绑定状态解析错误: %+v", info)
+	}
+
+	if err := client.Cmcc().SendTest(ctx); err != nil {
+		t.Fatalf("SendTest 失败: %v", err)
+	}
+	if err := client.Cmcc().Unbind(ctx); err != nil {
+		t.Fatalf("Unbind 失败: %v", err)
+	}
+}
+
 func TestQQBotBindAndGroupConfig(t *testing.T) {
 	mock := newMockHTTPRequester()
 	mock.enqueue("getAccessKey", 200, accessKeyResponse)

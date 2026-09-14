@@ -22,6 +22,8 @@ const (
 	ChannelApp Channel = "app"
 	// ChannelClawBot 微信 ClawBot。
 	ChannelClawBot Channel = "clawbot"
+	// ChannelCmcc 新消息 ClawBot（中国移动 5G 消息）；仅支持中国移动用户。
+	ChannelCmcc Channel = "cmcc"
 	// ChannelQQ QQ 机器人；不带 Option 发给自己，Option 填配置编码则发到对应 QQ 群。
 	ChannelQQ Channel = "qq"
 )
